@@ -15,6 +15,20 @@ Because the plugin is a server-side one, thus players don't have to install anyt
 
 Check [Releases](https://github.com/tetoe-mc/digging-count/releases) for the jar file.
 
+## Usage
+
+Drag the downloaded jar file into the mod folder, launch your server, and the plugin is ready to work.
+
+The scoreboard is put in the sidebar slot by default. And you can use the commands below to change it.
+
+### Commands
+
+You can use these commands to configure your digging count scoreboard.
+
+- `/digging enable <slot>`: Enable the scoreboard in the specified slot.
+- `/digging disable <slot>`: Disable the scoreboard in the specified slot.
+- `/digging title <title>`: Change the title of the scoreboard
+
 ## Build the source
 
 ```cmd
