@@ -1,0 +1,38 @@
+{
+	"schemaVersion": 1,
+	"id": "digging-count",
+	"version": "${version}",
+	"name": "Digging Count",
+	"description": "A fabric server plugin that provides player's digging count rankings.",
+	"authors": [
+		"NriotHrreion"
+	],
+	"contact": {
+		"homepage": "https://github.com/tetoe-mc/digging-count",
+		"sources": "https://github.com/tetoe-mc/digging-count"
+	},
+	"license": "CC0-1.0",
+	"icon": "assets/digging-count/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"net.nocpiun.diggingcount.DiggingCount"
+		]
+	},
+	"mixins": [
+		"digging-count.mixins.json",
+		{
+			"config": "digging-count.client.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.16.9",
+		"minecraft": "~1.21.4",
+		"java": ">=21",
+		"fabric-api": "*"
+	},
+	"suggests": {
+		"another-mod": "*"
+	}
+}
