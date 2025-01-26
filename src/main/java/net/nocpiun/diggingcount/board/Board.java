@@ -38,15 +38,25 @@ public class Board {
         access.setScore(count);
     }
 
-    public void setVisible(boolean visible) {
+    public void setVisible(ScoreboardDisplaySlot slot, boolean visible) {
         if(visible) {
-            scoreboard.setObjectiveSlot(ScoreboardDisplaySlot.SIDEBAR, objective);
+            scoreboard.setObjectiveSlot(slot, objective);
         } else {
-            scoreboard.setObjectiveSlot(ScoreboardDisplaySlot.SIDEBAR, null);
+            scoreboard.setObjectiveSlot(slot, null);
         }
     }
 
     public void setTitle(String title) {
         objective.setDisplayName(Message.colorize(title));
+    }
+
+    public static ScoreboardDisplaySlot slotToEnum(String slot) {
+        switch(slot) {
+            case "list": return ScoreboardDisplaySlot.LIST;
+            case "sidebar": return ScoreboardDisplaySlot.SIDEBAR;
+            case "below_name": return ScoreboardDisplaySlot.BELOW_NAME;
+        }
+
+        return ScoreboardDisplaySlot.valueOf(slot);
     }
 }

@@ -7,6 +7,7 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.scoreboard.ScoreboardDisplaySlot;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
@@ -17,6 +18,8 @@ import java.io.*;
 import java.util.HashMap;
 
 public class DiggingCountPlugin {
+    public final static HashMap<String, Object> defaultConfig = new HashMap<>();
+
     private MinecraftServer server;
 
     private File configFile;
@@ -26,6 +29,11 @@ public class DiggingCountPlugin {
     private Board board;
 
     public DiggingCountPlugin() {
+        defaultConfig.put(ScoreboardDisplaySlot.LIST.name(), false);
+        defaultConfig.put(ScoreboardDisplaySlot.SIDEBAR.name(), true);
+        defaultConfig.put(ScoreboardDisplaySlot.BELOW_NAME.name(), false);
+        defaultConfig.put("title", "§7§lDigging Count");
+
         ServerLifecycleEvents.SERVER_STARTED.register(this::onServerStart);
         ServerLifecycleEvents.SERVER_STOPPING.register(this::onServerStop);
         PlayerBlockBreakEvents.AFTER.register(this::onPlayerBreakBlock);
@@ -39,23 +47,31 @@ public class DiggingCountPlugin {
         configFile = new File(FabricLoader.getInstance().getConfigDir().toString(), "digging-count-config.dat");
         if(configFile.exists()) {
             config = loadFile(configFile);
+
+            defaultConfig.forEach((key, value) -> {
+                if(!config.containsKey(key)) {
+                    config.put(key, value);
+                }
+            });
         } else { // default config
-            config = new HashMap<>();
-            config.put("enabled", true);
-            config.put("title", "§7§lDigging Count");
+            config = new HashMap<>(defaultConfig);
         }
-        saveFile(configFile, config);
+        saveConfig();
 
         // Initialize the data
         dataFile = new File(FabricLoader.getInstance().getConfigDir().toString(), "digging-count.dat");
         if(dataFile.exists()) {
             counterMap = loadFile(dataFile);
+        } else {
+            counterMap = new HashMap<>();
         }
-        saveFile(dataFile, counterMap);
+        saveData();
 
         // Initialize the scoreboard
         board = new Board(this.server);
-        board.setVisible(getEnabled());
+        board.setVisible(ScoreboardDisplaySlot.LIST, getEnabled(ScoreboardDisplaySlot.LIST));
+        board.setVisible(ScoreboardDisplaySlot.SIDEBAR, getEnabled(ScoreboardDisplaySlot.SIDEBAR));
+        board.setVisible(ScoreboardDisplaySlot.BELOW_NAME, getEnabled(ScoreboardDisplaySlot.BELOW_NAME));
         board.setTitle(getTitle());
     }
 
@@ -64,7 +80,10 @@ public class DiggingCountPlugin {
     }
 
     private void onPlayerBreakBlock(World world, PlayerEntity player, BlockPos pos, BlockState state, BlockEntity entity) {
-        board.setCount(player, board.getCount(player) + 1);
+        int currentCount = board.getCount(player) + 1;
+        board.setCount(player, currentCount);
+        counterMap.put(player.getName().getString(), currentCount);
+        saveData();
     }
 
     @SuppressWarnings("unchecked")
@@ -97,13 +116,28 @@ public class DiggingCountPlugin {
         }
     }
 
-    public boolean getEnabled() {
-        return (boolean) config.get("enabled");
+    public boolean getEnabled(ScoreboardDisplaySlot slot) {
+        if(
+                slot == ScoreboardDisplaySlot.LIST
+                || slot == ScoreboardDisplaySlot.SIDEBAR
+                || slot == ScoreboardDisplaySlot.BELOW_NAME
+        ) {
+            return (boolean) config.get(slot.name());
+        }
+
+        return false;
     }
 
-    public void setEnabled(boolean enabled) {
-        config.put("enabled", enabled);
-        board.setVisible(enabled);
+    public void setEnabled(ScoreboardDisplaySlot slot, boolean enabled) {
+        if(
+                slot == ScoreboardDisplaySlot.LIST
+                || slot == ScoreboardDisplaySlot.SIDEBAR
+                || slot == ScoreboardDisplaySlot.BELOW_NAME
+        ) {
+            config.put(slot.name(), enabled);
+            board.setVisible(slot, enabled);
+            saveConfig();
+        }
     }
 
     public String getTitle() {
@@ -113,5 +147,14 @@ public class DiggingCountPlugin {
     public void setTitle(String title) {
         config.put("title", title);
         board.setTitle(title);
+        saveConfig();
+    }
+
+    private void saveConfig() {
+        saveFile(configFile, config);
+    }
+
+    private void saveData() {
+        saveFile(dataFile, counterMap);
     }
 }

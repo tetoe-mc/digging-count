@@ -3,12 +3,12 @@ package net.nocpiun.diggingcount.command;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
-import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.tree.ArgumentCommandNode;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import com.mojang.brigadier.tree.RootCommandNode;
 import net.minecraft.server.command.ServerCommandSource;
 import net.nocpiun.diggingcount.DiggingCountPlugin;
+import net.nocpiun.diggingcount.board.Board;
 import net.nocpiun.diggingcount.log.Log;
 import net.nocpiun.diggingcount.log.Message;
 
@@ -48,6 +48,18 @@ public class DiggingCommand implements Command<ServerCommandSource> {
                 })
                 .then(
                         argument("args", greedyString())
+                                .suggests((context, builder) -> {
+                                    builder = builder.createOffset(builder.getInput().lastIndexOf(" ") + 1);
+                                    String[] inputs = context.getInput().split(" ");
+
+                                    if(inputs[1].equals("enable") || inputs[1].equals("disable")) {
+                                        builder.suggest("list");
+                                        builder.suggest("sidebar");
+                                        builder.suggest("below_name");
+                                    }
+
+                                    return builder.buildFuture();
+                                })
                                 .executes(this)
                                 .build()
                 )
@@ -69,13 +81,17 @@ public class DiggingCommand implements Command<ServerCommandSource> {
             return 0;
         }
 
+        if(inputs.length < 3) {
+            return 0;
+        }
+
         switch(inputs[1].toLowerCase()) {
             case "enable":
-                plugin.setEnabled(true);
+                plugin.setEnabled(Board.slotToEnum(inputs[2]), true);
                 source.sendMessage(Message.create("§aSuccessfully enabled the scoreboard."));
                 break;
             case "disable":
-                plugin.setEnabled(false);
+                plugin.setEnabled(Board.slotToEnum(inputs[2]), false);
                 source.sendMessage(Message.create("§aSuccessfully disabled the scoreboard."));
                 break;
             case "title":
