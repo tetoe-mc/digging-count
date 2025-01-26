@@ -4,11 +4,12 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.scoreboard.*;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.text.Text;
+import net.nocpiun.diggingcount.log.Message;
 
 public class Board {
     public final static String BOARD_ID = "digging-count";
 
-    private Scoreboard scoreboard;
+    private final Scoreboard scoreboard;
     private ScoreboardObjective objective;
 
     public Board(MinecraftServer server) {
@@ -19,14 +20,12 @@ public class Board {
             objective = scoreboard.addObjective(
                     BOARD_ID,
                     ScoreboardCriterion.DUMMY,
-                    Text.of("§7§l挖掘榜"),
+                    Text.of(""),
                     ScoreboardCriterion.RenderType.INTEGER,
                     true,
                     null
             );
         }
-
-        scoreboard.setObjectiveSlot(ScoreboardDisplaySlot.SIDEBAR, objective);
     }
 
     public int getCount(PlayerEntity player) {
@@ -37,5 +36,17 @@ public class Board {
     public void setCount(PlayerEntity player, int count) {
         ScoreAccess access = scoreboard.getOrCreateScore(player, objective);
         access.setScore(count);
+    }
+
+    public void setVisible(boolean visible) {
+        if(visible) {
+            scoreboard.setObjectiveSlot(ScoreboardDisplaySlot.SIDEBAR, objective);
+        } else {
+            scoreboard.setObjectiveSlot(ScoreboardDisplaySlot.SIDEBAR, null);
+        }
+    }
+
+    public void setTitle(String title) {
+        objective.setDisplayName(Message.colorize(title));
     }
 }

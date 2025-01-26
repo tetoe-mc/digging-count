@@ -1,5 +1,6 @@
 package net.nocpiun.diggingcount;
 
+import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.fabricmc.loader.api.FabricLoader;
@@ -10,7 +11,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.nocpiun.diggingcount.board.Board;
-import net.nocpiun.diggingcount.log.Log;
+import net.nocpiun.diggingcount.command.DiggingCommand;
 
 import java.io.*;
 import java.util.HashMap;
@@ -19,6 +20,8 @@ public class DiggingCountPlugin {
     private MinecraftServer server;
 
     private File configFile;
+    private File dataFile;
+    private HashMap<String, Object> config;
     private HashMap<String, Integer> counterMap;
     private Board board;
 
@@ -26,20 +29,34 @@ public class DiggingCountPlugin {
         ServerLifecycleEvents.SERVER_STARTED.register(this::onServerStart);
         ServerLifecycleEvents.SERVER_STOPPING.register(this::onServerStop);
         PlayerBlockBreakEvents.AFTER.register(this::onPlayerBreakBlock);
+        CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> new DiggingCommand(dispatcher, this));
     }
 
     private void onServerStart(MinecraftServer server) {
         this.server = server;
 
         // Initialize the config
-        configFile = new File(FabricLoader.getInstance().getConfigDir().toString(), "digging-count.dat");
+        configFile = new File(FabricLoader.getInstance().getConfigDir().toString(), "digging-count-config.dat");
         if(configFile.exists()) {
-            loadConfig();
+            config = loadFile(configFile);
+        } else { // default config
+            config = new HashMap<>();
+            config.put("enabled", true);
+            config.put("title", "§7§lDigging Count");
         }
-        saveConfig();
+        saveFile(configFile, config);
+
+        // Initialize the data
+        dataFile = new File(FabricLoader.getInstance().getConfigDir().toString(), "digging-count.dat");
+        if(dataFile.exists()) {
+            counterMap = loadFile(dataFile);
+        }
+        saveFile(dataFile, counterMap);
 
         // Initialize the scoreboard
-        board = new Board(server);
+        board = new Board(this.server);
+        board.setVisible(getEnabled());
+        board.setTitle(getTitle());
     }
 
     private void onServerStop(MinecraftServer server) {
@@ -51,32 +68,50 @@ public class DiggingCountPlugin {
     }
 
     @SuppressWarnings("unchecked")
-    public void loadConfig() {
+    public <T> T loadFile(File file) {
         try {
-            FileInputStream fis = new FileInputStream(configFile);
+            FileInputStream fis = new FileInputStream(file);
             ObjectInputStream ois = new ObjectInputStream(fis);
 
-            counterMap = (HashMap<String, Integer>) ois.readObject();
+            T result = (T) ois.readObject();
             ois.close();
+
+            return result;
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         }
 
-        Log.info("Config is loaded.");
+        return null;
     }
 
-    public void saveConfig() {
+    public <T> void saveFile(File file, T obj) {
         try {
-            configFile.createNewFile();
-            FileOutputStream fos = new FileOutputStream(configFile);
+            file.createNewFile();
+            FileOutputStream fos = new FileOutputStream(file);
             ObjectOutputStream oos = new ObjectOutputStream(fos);
 
-            oos.writeObject(counterMap);
+            oos.writeObject(obj);
             oos.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
 
-        Log.info("Config is saved.");
+    public boolean getEnabled() {
+        return (boolean) config.get("enabled");
+    }
+
+    public void setEnabled(boolean enabled) {
+        config.put("enabled", enabled);
+        board.setVisible(enabled);
+    }
+
+    public String getTitle() {
+        return (String) config.get("title");
+    }
+
+    public void setTitle(String title) {
+        config.put("title", title);
+        board.setTitle(title);
     }
 }
