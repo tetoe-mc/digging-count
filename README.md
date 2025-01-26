@@ -3,6 +3,7 @@
 [![Author](https://img.shields.io/badge/Author-NriotHrreion-red.svg "Author")](https://github.com/NriotHrreion)
 [![LICENSE](https://img.shields.io/badge/License-CC0_1.0-green.svg "LICENSE")](./LICENSE)
 [![Stars](https://img.shields.io/github/stars/tetoe-mc/digging-count.svg?label=Stars&style=flat)](https://github.com/tetoe-mc/digging-count/stargazers)
+[![Github Workflow Status](https://img.shields.io/github/actions/workflow/status/tetoe-mc/digging-count/build.yml)](https://github.com/tetoe-mc/digging-count/actions/workflows/build.yml)
 
 ## Description
 
