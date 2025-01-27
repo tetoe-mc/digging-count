@@ -86,28 +86,26 @@ public class DiggingCommand implements Command<ServerCommandSource> {
         }
 
         switch(inputs[1].toLowerCase()) {
-            case "enable":
+            case "enable" -> {
                 plugin.setEnabled(Board.slotToEnum(inputs[2]), true);
-                source.sendMessage(Message.create("§aSuccessfully enabled the scoreboard."));
-                break;
-            case "disable":
+                source.sendMessage(Message.create("&aSuccessfully enabled the scoreboard."));
+            }
+            case "disable" -> {
                 plugin.setEnabled(Board.slotToEnum(inputs[2]), false);
-                source.sendMessage(Message.create("§aSuccessfully disabled the scoreboard."));
-                break;
-            case "title":
+                source.sendMessage(Message.create("&aSuccessfully disabled the scoreboard."));
+            }
+            case "title" -> {
                 String text = "";
-
                 for(int i = 2; i < inputs.length; i++) {
                     text += inputs[i];
                     if(i != inputs.length - 1) {
                         text += " ";
                     }
                 }
-
                 plugin.setTitle(text);
-                Log.info("The scoreboard title is set to \""+ text +"\".");
-                source.sendMessage(Message.create("§aSuccessfully set the scoreboard title."));
-                break;
+                Log.info("The scoreboard title is set to \"" + text + "\".");
+                source.sendMessage(Message.create("&aSuccessfully set the scoreboard title."));
+            }
         }
 
         return 1;
