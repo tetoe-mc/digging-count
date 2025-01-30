@@ -29,7 +29,7 @@ You can use these commands to configure your digging count scoreboard.
 - `/digging disable <slot>`: Disable the scoreboard in the specified slot.
 - `/digging title <title>`: Change the title of the scoreboard
 
-## Build the source
+## Build from source
 
 ```cmd
 git clone https://github.com/tetoe-mc/digging-count.git
