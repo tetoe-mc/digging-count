@@ -180,7 +180,7 @@ public class DiggingCountPlugin {
 
 
     public void removePlayer(String player) {
-        board.removePlayer(server.getPlayerManager().getPlayer(player));
+        board.removePlayer(player);
     }
 
     private void saveConfig() {
