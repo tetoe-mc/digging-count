@@ -40,6 +40,7 @@ public class DiggingCommand implements Command<ServerCommandSource> {
                         builder.suggest("enable");
                         builder.suggest("disable");
                         builder.suggest("title");
+                        builder.suggest("remove");
 
                         return builder.buildFuture();
                     }
@@ -105,6 +106,11 @@ public class DiggingCommand implements Command<ServerCommandSource> {
                 plugin.setTitle(text);
                 Log.info("The scoreboard title is set to \"" + text + "\".");
                 source.sendMessage(Message.create("&aSuccessfully set the scoreboard title."));
+            }
+            case "remove" -> {
+                String player = inputs[2];
+                plugin.removePlayer(player);
+                source.sendMessage(Message.create("&aSuccessfully remove &f" + player + "&a from the list."));
             }
         }
 

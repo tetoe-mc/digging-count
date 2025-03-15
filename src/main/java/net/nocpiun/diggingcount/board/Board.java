@@ -50,6 +50,10 @@ public class Board {
         objective.setDisplayName(Message.colorize(title));
     }
 
+    public void removePlayer(PlayerEntity player) {
+        scoreboard.removeScores(player);
+    }
+
     public static ScoreboardDisplaySlot slotToEnum(String slot) {
         switch(slot) {
             case "list": return ScoreboardDisplaySlot.LIST;
