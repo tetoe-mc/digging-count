@@ -1,9 +1,7 @@
 package net.nocpiun.diggingcount;
 
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
-import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerWorldEvents;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.fabricmc.fabric.api.networking.v1.PacketSender;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
@@ -13,6 +11,7 @@ import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.scoreboard.ScoreboardDisplaySlot;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayNetworkHandler;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.stat.Stats;
@@ -21,13 +20,18 @@ import net.minecraft.world.World;
 import net.nocpiun.diggingcount.board.Board;
 import net.nocpiun.diggingcount.command.DiggingCommand;
 import net.nocpiun.diggingcount.log.Log;
+import net.nocpiun.diggingcount.log.Message;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class DiggingCountPlugin {
     public final static HashMap<String, Object> defaultConfig = new HashMap<>();
+    private static final Logger log = LoggerFactory.getLogger(DiggingCountPlugin.class);
 
     private MinecraftServer server;
 
@@ -37,10 +41,12 @@ public class DiggingCountPlugin {
     private HashMap<String, Integer> counterMap;
     private Board board;
 
+
     public DiggingCountPlugin() {
         defaultConfig.put(ScoreboardDisplaySlot.LIST.name(), false);
         defaultConfig.put(ScoreboardDisplaySlot.SIDEBAR.name(), true);
         defaultConfig.put(ScoreboardDisplaySlot.BELOW_NAME.name(), false);
+        defaultConfig.put("players", new ArrayList<String>());
         defaultConfig.put("title", "§7§lDigging Count");
 
         ServerLifecycleEvents.SERVER_STARTED.register(this::onServerStart);
@@ -100,15 +106,33 @@ public class DiggingCountPlugin {
         board.setCount(player, sum.get());
         counterMap.put(player.getName().getString(), sum.get());
         saveData();
+
+
+        ArrayList<String> players = (ArrayList<String>) config.get("players");
+        String entry = player.getName().getString();
+
+        if (!players.contains(entry)) {
+            players.add(entry);
+        } else {
+            return;
+        }
+        config.remove("players");
+        config.put("players", players);
+
+        saveConfig();
     }
 
     private void onPlayerBreakBlock(World world, PlayerEntity player, BlockPos pos, BlockState state, BlockEntity entity) {
         if(player.isCreative()) return;
 
-        int currentCount = board.getCount(player) + 1;
-        board.setCount(player, currentCount);
-        counterMap.put(player.getName().getString(), currentCount);
-        saveData();
+        ArrayList<String> players = (ArrayList<String>) config.get("players");
+
+        if (players.contains(player.getName().getString())) {
+            int currentCount = board.getCount(player) + 1;
+            board.setCount(player, currentCount);
+            counterMap.put(player.getName().getString(), currentCount);
+            saveData();
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -172,6 +196,25 @@ public class DiggingCountPlugin {
     public void setTitle(String title) {
         config.put("title", title);
         board.setTitle(title);
+        saveConfig();
+    }
+
+
+    public void removePlayers(String entry, ServerCommandSource source) {
+        ArrayList<String> players = (ArrayList<String>) config.get("players");
+
+        if (players.contains(entry)) {
+            players.remove(entry);
+        } else {
+            source.sendMessage(Message.create("&cPlayer &f" + entry + "&c not in the list!"));
+            return;
+        }
+
+        config.remove("players");
+        config.put("players", players);
+
+        source.sendMessage(Message.create("&aSuccessfully remove &f" + entry + "&a from the list!"));
+
         saveConfig();
     }
 
