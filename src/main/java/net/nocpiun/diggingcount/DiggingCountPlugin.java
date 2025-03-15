@@ -31,7 +31,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class DiggingCountPlugin {
     public final static HashMap<String, Object> defaultConfig = new HashMap<>();
-    private static final Logger log = LoggerFactory.getLogger(DiggingCountPlugin.class);
 
     private MinecraftServer server;
 
@@ -41,12 +40,10 @@ public class DiggingCountPlugin {
     private HashMap<String, Integer> counterMap;
     private Board board;
 
-
     public DiggingCountPlugin() {
         defaultConfig.put(ScoreboardDisplaySlot.LIST.name(), false);
         defaultConfig.put(ScoreboardDisplaySlot.SIDEBAR.name(), true);
         defaultConfig.put(ScoreboardDisplaySlot.BELOW_NAME.name(), false);
-        defaultConfig.put("players", new ArrayList<String>());
         defaultConfig.put("title", "§7§lDigging Count");
 
         ServerLifecycleEvents.SERVER_STARTED.register(this::onServerStart);
@@ -106,33 +103,15 @@ public class DiggingCountPlugin {
         board.setCount(player, sum.get());
         counterMap.put(player.getName().getString(), sum.get());
         saveData();
-
-
-        ArrayList<String> players = (ArrayList<String>) config.get("players");
-        String entry = player.getName().getString();
-
-        if (!players.contains(entry)) {
-            players.add(entry);
-        } else {
-            return;
-        }
-        config.remove("players");
-        config.put("players", players);
-
-        saveConfig();
     }
 
     private void onPlayerBreakBlock(World world, PlayerEntity player, BlockPos pos, BlockState state, BlockEntity entity) {
         if(player.isCreative()) return;
 
-        ArrayList<String> players = (ArrayList<String>) config.get("players");
-
-        if (players.contains(player.getName().getString())) {
-            int currentCount = board.getCount(player) + 1;
-            board.setCount(player, currentCount);
-            counterMap.put(player.getName().getString(), currentCount);
-            saveData();
-        }
+        int currentCount = board.getCount(player) + 1;
+        board.setCount(player, currentCount);
+        counterMap.put(player.getName().getString(), currentCount);
+        saveData();
     }
 
     @SuppressWarnings("unchecked")
@@ -200,22 +179,8 @@ public class DiggingCountPlugin {
     }
 
 
-    public void removePlayers(String entry, ServerCommandSource source) {
-        ArrayList<String> players = (ArrayList<String>) config.get("players");
-
-        if (players.contains(entry)) {
-            players.remove(entry);
-        } else {
-            source.sendMessage(Message.create("&cPlayer &f" + entry + "&c not in the list!"));
-            return;
-        }
-
-        config.remove("players");
-        config.put("players", players);
-
-        source.sendMessage(Message.create("&aSuccessfully remove &f" + entry + "&a from the list!"));
-
-        saveConfig();
+    public void removePlayer(String player) {
+        board.removePlayer(server.getPlayerManager().getPlayer(player));
     }
 
     private void saveConfig() {
