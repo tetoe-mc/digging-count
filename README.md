@@ -27,7 +27,8 @@ You can use these commands to configure your digging count scoreboard.
 
 - `/digging enable <slot>`: Enable the scoreboard in the specified slot.
 - `/digging disable <slot>`: Disable the scoreboard in the specified slot.
-- `/digging title <title>`: Change the title of the scoreboard
+- `/digging title <title>`: Change the title of the scoreboard.
+- `/digging remove <player>`: Remove a specified player from the scoreboard.
 
 ## Build from source
 
