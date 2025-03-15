@@ -1,9 +1,7 @@
 package net.nocpiun.diggingcount;
 
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
-import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerWorldEvents;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.fabricmc.fabric.api.networking.v1.PacketSender;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
@@ -13,6 +11,7 @@ import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.scoreboard.ScoreboardDisplaySlot;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayNetworkHandler;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.stat.Stats;
@@ -21,8 +20,12 @@ import net.minecraft.world.World;
 import net.nocpiun.diggingcount.board.Board;
 import net.nocpiun.diggingcount.command.DiggingCommand;
 import net.nocpiun.diggingcount.log.Log;
+import net.nocpiun.diggingcount.log.Message;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -173,6 +176,11 @@ public class DiggingCountPlugin {
         config.put("title", title);
         board.setTitle(title);
         saveConfig();
+    }
+
+
+    public void removePlayer(String player) {
+        board.removePlayer(server.getPlayerManager().getPlayer(player));
     }
 
     private void saveConfig() {
