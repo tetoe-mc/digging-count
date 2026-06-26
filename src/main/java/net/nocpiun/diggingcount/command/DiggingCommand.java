@@ -6,7 +6,9 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.tree.ArgumentCommandNode;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import com.mojang.brigadier.tree.RootCommandNode;
-import net.minecraft.server.command.ServerCommandSource;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.server.permissions.Permission;
+import net.minecraft.server.permissions.PermissionLevel;
 import net.nocpiun.diggingcount.DiggingCountPlugin;
 import net.nocpiun.diggingcount.board.Board;
 import net.nocpiun.diggingcount.log.Log;
@@ -16,22 +18,22 @@ import java.util.concurrent.CompletableFuture;
 
 import static com.mojang.brigadier.arguments.StringArgumentType.greedyString;
 import static com.mojang.brigadier.arguments.StringArgumentType.string;
-import static net.minecraft.server.command.CommandManager.argument;
-import static net.minecraft.server.command.CommandManager.literal;
+import static net.minecraft.commands.Commands.argument;
+import static net.minecraft.commands.Commands.literal;
 
-public class DiggingCommand implements Command<ServerCommandSource> {
+public class DiggingCommand implements Command<CommandSourceStack> {
     public final static String cmd = "digging";
 
     private final DiggingCountPlugin plugin;
 
-    public DiggingCommand(CommandDispatcher<ServerCommandSource> dispatcher, DiggingCountPlugin plugin) {
-        final RootCommandNode<ServerCommandSource> root = dispatcher.getRoot();
+    public DiggingCommand(CommandDispatcher<CommandSourceStack> dispatcher, DiggingCountPlugin plugin) {
+        final RootCommandNode<CommandSourceStack> root = dispatcher.getRoot();
 
-        final LiteralCommandNode<ServerCommandSource> command = literal(cmd)
+        final LiteralCommandNode<CommandSourceStack> command = literal(cmd)
                 .executes(this)
                 .build();
 
-        final ArgumentCommandNode<ServerCommandSource, String> args = argument("operation", string())
+        final ArgumentCommandNode<CommandSourceStack, String> args = argument("operation", string())
                 .suggests((context, builder) -> {
                     builder = builder.createOffset(builder.getInput().lastIndexOf(" ") + 1);
                     String[] inputs = context.getInput().split(" ");
@@ -74,11 +76,11 @@ public class DiggingCommand implements Command<ServerCommandSource> {
     }
 
     @Override
-    public int run(CommandContext<ServerCommandSource> ctx) {
-        ServerCommandSource source = ctx.getSource();
+    public int run(CommandContext<CommandSourceStack> ctx) {
+        CommandSourceStack source = ctx.getSource();
         String[] inputs = ctx.getInput().split(" ");
 
-        if(!source.hasPermissionLevel(4)) {
+        if(!source.permissions().hasPermission(new Permission.HasCommandLevel(PermissionLevel.OWNERS))) {
             return 0;
         }
 
@@ -89,11 +91,11 @@ public class DiggingCommand implements Command<ServerCommandSource> {
         switch(inputs[1].toLowerCase()) {
             case "enable" -> {
                 plugin.setEnabled(Board.slotToEnum(inputs[2]), true);
-                source.sendMessage(Message.create("&aSuccessfully enabled the scoreboard."));
+                source.sendSystemMessage(Message.create("&aSuccessfully enabled the scoreboard."));
             }
             case "disable" -> {
                 plugin.setEnabled(Board.slotToEnum(inputs[2]), false);
-                source.sendMessage(Message.create("&aSuccessfully disabled the scoreboard."));
+                source.sendSystemMessage(Message.create("&aSuccessfully disabled the scoreboard."));
             }
             case "title" -> {
                 String text = "";
@@ -105,12 +107,12 @@ public class DiggingCommand implements Command<ServerCommandSource> {
                 }
                 plugin.setTitle(text);
                 Log.info("The scoreboard title is set to \"" + text + "\".");
-                source.sendMessage(Message.create("&aSuccessfully set the scoreboard title."));
+                source.sendSystemMessage(Message.create("&aSuccessfully set the scoreboard title."));
             }
             case "remove" -> {
                 String player = inputs[2];
                 plugin.removePlayer(player);
-                source.sendMessage(Message.create("&aSuccessfully remove &f" + player + "&a from the list."));
+                source.sendSystemMessage(Message.create("&aSuccessfully remove &f" + player + "&a from the list."));
             }
         }
 

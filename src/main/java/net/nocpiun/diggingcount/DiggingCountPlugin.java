@@ -6,26 +6,22 @@ import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.fabricmc.fabric.api.networking.v1.PacketSender;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.scoreboard.ScoreboardDisplaySlot;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.core.BlockPos;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.server.network.ServerPlayNetworkHandler;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.stat.Stats;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.network.ServerGamePacketListenerImpl;
+import net.minecraft.stats.Stats;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.scores.DisplaySlot;
 import net.nocpiun.diggingcount.board.Board;
 import net.nocpiun.diggingcount.command.DiggingCommand;
 import net.nocpiun.diggingcount.log.Log;
-import net.nocpiun.diggingcount.log.Message;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -41,9 +37,9 @@ public class DiggingCountPlugin {
     private Board board;
 
     public DiggingCountPlugin() {
-        defaultConfig.put(ScoreboardDisplaySlot.LIST.name(), false);
-        defaultConfig.put(ScoreboardDisplaySlot.SIDEBAR.name(), true);
-        defaultConfig.put(ScoreboardDisplaySlot.BELOW_NAME.name(), false);
+        defaultConfig.put(DisplaySlot.LIST.name(), false);
+        defaultConfig.put(DisplaySlot.SIDEBAR.name(), true);
+        defaultConfig.put(DisplaySlot.BELOW_NAME.name(), false);
         defaultConfig.put("title", "§7§lDigging Count");
 
         ServerLifecycleEvents.SERVER_STARTED.register(this::onServerStart);
@@ -82,9 +78,9 @@ public class DiggingCountPlugin {
 
         // Initialize the scoreboard
         board = new Board(this.server);
-        board.setVisible(ScoreboardDisplaySlot.LIST, getEnabled(ScoreboardDisplaySlot.LIST));
-        board.setVisible(ScoreboardDisplaySlot.SIDEBAR, getEnabled(ScoreboardDisplaySlot.SIDEBAR));
-        board.setVisible(ScoreboardDisplaySlot.BELOW_NAME, getEnabled(ScoreboardDisplaySlot.BELOW_NAME));
+        board.setVisible(DisplaySlot.LIST, getEnabled(DisplaySlot.LIST));
+        board.setVisible(DisplaySlot.SIDEBAR, getEnabled(DisplaySlot.SIDEBAR));
+        board.setVisible(DisplaySlot.BELOW_NAME, getEnabled(DisplaySlot.BELOW_NAME));
         board.setTitle(getTitle());
     }
 
@@ -92,12 +88,12 @@ public class DiggingCountPlugin {
         this.server = null;
     }
 
-    private void onPlayerJoinServer(ServerPlayNetworkHandler handler, PacketSender sender, MinecraftServer server) {
-        ServerPlayerEntity player = handler.getPlayer();
+    private void onPlayerJoinServer(ServerGamePacketListenerImpl handler, PacketSender sender, MinecraftServer server) {
+        ServerPlayer player = handler.getPlayer();
 
         AtomicInteger sum = new AtomicInteger();
-        Stats.MINED.forEach((stat) -> {
-            sum.addAndGet(player.getStatHandler().getStat(stat));
+        Stats.BLOCK_MINED.forEach((stat) -> {
+            sum.addAndGet(player.getStats().getValue(stat));
         });
 
         board.setCount(player, sum.get());
@@ -105,7 +101,7 @@ public class DiggingCountPlugin {
         saveData();
     }
 
-    private void onPlayerBreakBlock(World world, PlayerEntity player, BlockPos pos, BlockState state, BlockEntity entity) {
+    private void onPlayerBreakBlock(Level world, Player player, BlockPos pos, BlockState state, BlockEntity entity) {
         if(player.isCreative()) return;
 
         int currentCount = board.getCount(player) + 1;
@@ -144,11 +140,11 @@ public class DiggingCountPlugin {
         }
     }
 
-    public boolean getEnabled(ScoreboardDisplaySlot slot) {
+    public boolean getEnabled(DisplaySlot slot) {
         if(
-                slot == ScoreboardDisplaySlot.LIST
-                || slot == ScoreboardDisplaySlot.SIDEBAR
-                || slot == ScoreboardDisplaySlot.BELOW_NAME
+                slot == DisplaySlot.LIST
+                || slot == DisplaySlot.SIDEBAR
+                || slot == DisplaySlot.BELOW_NAME
         ) {
             return (boolean) config.get(slot.name());
         }
@@ -156,11 +152,11 @@ public class DiggingCountPlugin {
         return false;
     }
 
-    public void setEnabled(ScoreboardDisplaySlot slot, boolean enabled) {
+    public void setEnabled(DisplaySlot slot, boolean enabled) {
         if(
-                slot == ScoreboardDisplaySlot.LIST
-                || slot == ScoreboardDisplaySlot.SIDEBAR
-                || slot == ScoreboardDisplaySlot.BELOW_NAME
+                slot == DisplaySlot.LIST
+                || slot == DisplaySlot.SIDEBAR
+                || slot == DisplaySlot.BELOW_NAME
         ) {
             config.put(slot.name(), enabled);
             board.setVisible(slot, enabled);

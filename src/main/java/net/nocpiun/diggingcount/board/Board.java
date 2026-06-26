@@ -1,48 +1,53 @@
 package net.nocpiun.diggingcount.board;
 
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.scoreboard.*;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.text.Text;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.scores.DisplaySlot;
+import net.minecraft.world.scores.Objective;
+import net.minecraft.world.scores.ScoreAccess;
+import net.minecraft.world.scores.ScoreHolder;
+import net.minecraft.world.scores.Scoreboard;
+import net.minecraft.world.scores.criteria.ObjectiveCriteria;
 import net.nocpiun.diggingcount.log.Message;
 
 public class Board {
     public final static String BOARD_ID = "digging-count";
 
     private final Scoreboard scoreboard;
-    private ScoreboardObjective objective;
+    private Objective objective;
 
     public Board(MinecraftServer server) {
         scoreboard = server.getScoreboard();
 
-        objective = scoreboard.getNullableObjective(BOARD_ID);
+        objective = scoreboard.getObjective(BOARD_ID);
         if(objective == null) {
             objective = scoreboard.addObjective(
                     BOARD_ID,
-                    ScoreboardCriterion.DUMMY,
-                    Text.of(""),
-                    ScoreboardCriterion.RenderType.INTEGER,
+                    ObjectiveCriteria.DUMMY,
+                    Component.literal(""),
+                    ObjectiveCriteria.RenderType.INTEGER,
                     true,
                     null
             );
         }
     }
 
-    public int getCount(PlayerEntity player) {
-        ScoreAccess access = scoreboard.getOrCreateScore(player, objective);
-        return access.getScore();
+    public int getCount(Player player) {
+        ScoreAccess access = scoreboard.getOrCreatePlayerScore(player, objective);
+        return access.get();
     }
 
-    public void setCount(PlayerEntity player, int count) {
-        ScoreAccess access = scoreboard.getOrCreateScore(player, objective);
-        access.setScore(count);
+    public void setCount(Player player, int count) {
+        ScoreAccess access = scoreboard.getOrCreatePlayerScore(player, objective);
+        access.set(count);
     }
 
-    public void setVisible(ScoreboardDisplaySlot slot, boolean visible) {
+    public void setVisible(DisplaySlot slot, boolean visible) {
         if(visible) {
-            scoreboard.setObjectiveSlot(slot, objective);
+            scoreboard.setDisplayObjective(slot, objective);
         } else {
-            scoreboard.setObjectiveSlot(slot, null);
+            scoreboard.setDisplayObjective(slot, null);
         }
     }
 
@@ -51,20 +56,20 @@ public class Board {
     }
 
     public void removePlayer(String player) {
-        for(ScoreHolder holder : scoreboard.getKnownScoreHolders()) {
-            if(holder.getNameForScoreboard().equals(player)) {
-                scoreboard.removeScores(holder);
+        for(ScoreHolder holder : scoreboard.getTrackedPlayers()) {
+            if(holder.getScoreboardName().equals(player)) {
+                scoreboard.resetSinglePlayerScore(holder, null);
             }
         }
     }
 
-    public static ScoreboardDisplaySlot slotToEnum(String slot) {
+    public static DisplaySlot slotToEnum(String slot) {
         switch(slot) {
-            case "list": return ScoreboardDisplaySlot.LIST;
-            case "sidebar": return ScoreboardDisplaySlot.SIDEBAR;
-            case "below_name": return ScoreboardDisplaySlot.BELOW_NAME;
+            case "list": return DisplaySlot.LIST;
+            case "sidebar": return DisplaySlot.SIDEBAR;
+            case "below_name": return DisplaySlot.BELOW_NAME;
         }
 
-        return ScoreboardDisplaySlot.valueOf(slot);
+        return DisplaySlot.valueOf(slot);
     }
 }
